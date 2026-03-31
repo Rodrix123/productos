@@ -1,82 +1,106 @@
-<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inventario</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fruver · El Jardín</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <header>
-    <h1>Inventario de Productos</h1>
-    <button id="btn-nuevo" onclick="abrirModal()">+ Nuevo producto</button>
-  </header>
+<header>
+  <h1>Fruver</h1>
+  <span>El Jardín</span>
+  <div class="db-badge connected" id="db-badge">
+    <div class="dot"></div>
+    <label>Supabase</label>
+  </div>
+</header>
 
-  <main>
-    <!-- Buscador -->
-    <div class="controles">
-      <input type="text" id="buscar" placeholder="Buscar producto...">
-      <select id="filtro-categoria">
-        <option value="">Todas las categorías</option>
-      </select>
+<div class="layout">
+
+  <div class="panel form-panel">
+    <div class="panel-title">// Nuevo Producto</div>
+
+    <div class="field">
+      <label>Nombre</label>
+      <input id="inp-nombre" type="text" placeholder="ej. Mango Tommy">
+    </div>
+    <div class="field">
+      <label>Categoría</label>
+      <input id="inp-cat" type="text" placeholder="Fruta / Verdura / Tubérculo">
+    </div>
+    <div class="field">
+      <label>Precio / kg ($)</label>
+      <input id="inp-precio" type="number" placeholder="0">
+    </div>
+    <div class="field">
+      <label>Stock (kg)</label>
+      <input id="inp-stock" type="number" placeholder="0">
     </div>
 
-    <!-- Tabla -->
-    <div class="tabla-wrapper">
-      <table id="tabla-productos">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+    <div class="panel-title" style="margin-top:20px">// Registrar Venta</div>
+    <div class="field">
+      <label>Kg a vender</label>
+      <input id="inp-kg" type="number" placeholder="1" min="1" value="1">
     </div>
-    <p id="sin-resultados" style="display:none">No hay productos.</p>
-  </main>
 
-  <!-- Modal crear/editar -->
-  <div id="modal-overlay" class="modal-overlay" style="display:none">
-    <div class="modal">
-      <h2 id="modal-titulo">Nuevo producto</h2>
-      <form id="form-producto">
-        <input type="hidden" id="producto-id">
-        <div class="campo">
-          <label>Nombre *</label>
-          <input type="text" id="nombre" required>
-        </div>
-        <div class="campo">
-          <label>Descripción</label>
-          <textarea id="descripcion" rows="2"></textarea>
-        </div>
-        <div class="fila-dos">
-          <div class="campo">
-            <label>Precio *</label>
-            <input type="number" id="precio" min="0" required>
-          </div>
-          <div class="campo">
-            <label>Stock</label>
-            <input type="number" id="stock" min="0" value="0">
-          </div>
-        </div>
-        <div class="campo">
-          <label>Categoría</label>
-          <input type="text" id="categoria">
-        </div>
-        <div class="modal-acciones">
-          <button type="button" onclick="cerrarModal()">Cancelar</button>
-          <button type="submit" class="btn-primary">Guardar</button>
-        </div>
-      </form>
+    <div class="btn-row">
+      <button class="btn btn-green"  onclick="agregarProducto()">+ Agregar Producto</button>
+      <button class="btn btn-orange" onclick="venderKg()">⚡ Registrar Venta</button>
+      <button class="btn btn-red"    onclick="eliminarProducto()">✕ Eliminar Seleccionado</button>
+      <button class="btn btn-gray"   onclick="limpiarCampos()">↺ Limpiar Campos</button>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <div class="panel table-panel">
+    <div class="panel-title">// Inventario Productos</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio/kg</th>
+            <th>Stock</th>
+            <th>Valor Total</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="6">
+            <div class="empty-state">
+              <div class="icon">🌿</div>
+              Cargando inventario...
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel stats-panel">
+    <div class="stat-item">
+      <div class="stat-label">🏆 Mayor Valor</div>
+      <div class="stat-value" id="stat-max-name">—</div>
+      <div class="stat-sub" id="stat-max-price"></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">📦 Artículos</div>
+      <div class="stat-value" id="stat-count">0</div>
+      <div class="stat-sub">productos</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">💵 Valor Inventario</div>
+      <div class="stat-value" id="stat-total">$0</div>
+      <div class="stat-sub">total en stock</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+<script src="app.js"></script> 
 </body>
 </html>

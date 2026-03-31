@@ -1,55 +1,68 @@
-import { supabase } from '../config/supabase.js'
+import supabase from '../config/supabase.js';
 
-export const obtenerProductos = async (req, res, next) => {
-  try {
-    const { buscar, categoria } = req.query
-    let query = supabase.from('productos').select('*').order('creado_en', { ascending: false })
-    if (buscar)    query = query.ilike('nombre', `%${buscar}%`)
-    if (categoria) query = query.eq('categoria', categoria)
-    const { data, error } = await query
-    if (error) throw error
-    res.json({ total: data.length, productos: data })
-  } catch (err) { next(err) }
+export async function getProductos(req, res) {
+  const { data, error } = await supabase
+    .from('productos')
+    .select('*')
+    .order('id');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 }
 
-export const obtenerProducto = async (req, res, next) => {
-  try {
-    const { data, error } = await supabase
-      .from('productos').select('*').eq('id', req.params.id).single()
-    if (error) return next({ status: 404, mensaje: 'Producto no encontrado' })
-    res.json(data)
-  } catch (err) { next(err) }
+export async function createProducto(req, res) {
+  const { nombre, categoria, precio, stock } = req.body;
+  if (!nombre || precio == null) {
+    return res.status(400).json({ error: 'nombre y precio son obligatorios' });
+  }
+  const { data, error } = await supabase
+    .from('productos')
+    .insert([{ nombre, categoria: categoria || 'General', precio, stock: stock || 0 }])
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
 }
 
-export const crearProducto = async (req, res, next) => {
-  try {
-    const { nombre, descripcion, precio, stock, categoria } = req.body
-    if (!nombre?.trim()) return next({ status: 400, mensaje: 'El nombre es requerido' })
-    if (precio === undefined || precio < 0) return next({ status: 400, mensaje: 'Precio inválido' })
-    const { data, error } = await supabase
-      .from('productos').insert([{ nombre, descripcion, precio, stock: stock || 0, categoria }])
-      .select().single()
-    if (error) throw error
-    res.status(201).json(data)
-  } catch (err) { next(err) }
+export async function updateProducto(req, res) {
+  const { id } = req.params;
+  const { nombre, categoria, precio, stock } = req.body;
+  const { data, error } = await supabase
+    .from('productos')
+    .update({ nombre, categoria, precio, stock })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 }
 
-export const actualizarProducto = async (req, res, next) => {
-  try {
-    const { nombre, descripcion, precio, stock, categoria } = req.body
-    const { data, error } = await supabase
-      .from('productos').update({ nombre, descripcion, precio, stock, categoria })
-      .eq('id', req.params.id).select().single()
-    if (error) return next({ status: 404, mensaje: 'Producto no encontrado' })
-    res.json(data)
-  } catch (err) { next(err) }
+export async function deleteProducto(req, res) {
+  const { id } = req.params;
+  const { error } = await supabase
+    .from('productos')
+    .delete()
+    .eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Producto eliminado' });
 }
 
-export const eliminarProducto = async (req, res, next) => {
-  try {
-    const { error } = await supabase
-      .from('productos').delete().eq('id', req.params.id)
-    if (error) return next({ status: 404, mensaje: 'Producto no encontrado' })
-    res.status(204).send()
-  } catch (err) { next(err) }
+export async function getStats(req, res) {
+  const { data: productos, error } = await supabase
+    .from('productos')
+    .select('nombre, precio, stock');
+  if (error) return res.status(500).json({ error: error.message });
+
+  const count = productos.length;
+  const totalValor = productos.reduce((acc, p) => acc + p.precio * p.stock, 0);
+  const maxProducto = productos.reduce(
+    (max, p) => (p.precio > (max?.precio || 0) ? p : max),
+    null
+  );
+
+  res.json({
+    count,
+    totalValor,
+    maxNombre: maxProducto?.nombre || '—',
+    maxPrecio: maxProducto?.precio || 0,
+  });
 }
